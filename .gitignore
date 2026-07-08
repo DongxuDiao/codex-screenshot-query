@@ -8,6 +8,7 @@ work/
 .env
 .env.*
 !.env.example
+.gh-config/
 
 npm-debug.log*
 yarn-debug.log*
