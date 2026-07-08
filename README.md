@@ -2,7 +2,7 @@
 
 一个 macOS 菜单栏截图助手：按下快捷键截图，选择默认 query，然后把截图和文本直接粘贴到 Codex Desktop。
 
-![Demo](docs/assets/demo.svg)
+![Demo](docs/assets/demo.gif)
 
 ## 功能特性
 
