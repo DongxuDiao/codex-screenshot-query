@@ -1,0 +1,63 @@
+{
+  "name": "codex-screenshot-query",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "description": "macOS menu bar helper for screenshot-driven Codex prompts.",
+  "author": "bytedance",
+  "main": "dist/main/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run build:main && concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && ELECTRON_RENDERER_URL=http://127.0.0.1:5173 electron .\"",
+    "build": "npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "vite build",
+    "package:dmg": "npm run build && electron-builder --mac dmg --publish never -c.mac.identity=null -c.mac.notarize=false",
+    "package:dmg:signed": "npm run build && electron-builder --mac dmg --publish never",
+    "check:mac-signing": "security find-identity -v -p codesigning | grep 'Developer ID Application' && xcrun notarytool --version",
+    "start": "electron .",
+    "test": "vitest run"
+  },
+  "build": {
+    "appId": "com.bytedance.codex-screenshot-query",
+    "productName": "Codex Screenshot Query",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "package.json"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "notarize": true,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.2",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.7.2",
+    "vite": "^8.1.3",
+    "vitest": "^4.1.10",
+    "wait-on": "^8.0.1"
+  }
+}
