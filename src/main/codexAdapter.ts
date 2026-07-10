@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { clipboard, type NativeImage } from "electron";
 
 const execFileAsync = promisify(execFile);
+const codexBundleId = "com.openai.codex";
 
 export type SendToCodexResult = {
   copied: boolean;
@@ -11,28 +12,27 @@ export type SendToCodexResult = {
   message: string;
 };
 
+export function buildCodexPasteScript() {
+  return [
+    `tell application id "${codexBundleId}" to activate`,
+    "delay 0.7",
+    'tell application "System Events"',
+    '  keystroke "v" using command down',
+    "end tell"
+  ].join("\n");
+}
+
 async function pasteClipboardIntoCodex() {
-  await execFileAsync("/usr/bin/osascript", [
-    "-e",
-    [
-      'tell application "Codex" to activate',
-      "delay 0.25",
-      'tell application "System Events"',
-      '  if exists process "Codex" then',
-      '    keystroke "v" using command down',
-      "  end if",
-      "end tell"
-    ].join("\n")
-  ]);
+  await execFileAsync("/usr/bin/osascript", ["-e", buildCodexPasteScript()]);
 }
 
 export async function sendPromptToCodex(input: { prompt: string; image: NativeImage }): Promise<SendToCodexResult> {
   try {
-    await execFileAsync("/usr/bin/open", ["-a", "Codex"]);
-    clipboard.writeImage(input.image);
-    await pasteClipboardIntoCodex();
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    clipboard.writeText(input.prompt);
+    await execFileAsync("/usr/bin/open", ["-b", codexBundleId]);
+    clipboard.write({
+      image: input.image,
+      text: input.prompt
+    });
     await pasteClipboardIntoCodex();
 
     return {
