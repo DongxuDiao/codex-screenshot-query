@@ -12,6 +12,13 @@ export type SendToCodexResult = {
   message: string;
 };
 
+type CodexPasteDependencies<TImage> = {
+  writeImage: (image: TImage) => void;
+  writeText: (text: string) => void;
+  paste: () => Promise<void>;
+  wait: (milliseconds: number) => Promise<void>;
+};
+
 export function buildCodexPasteScript() {
   return [
     `tell application id "${codexBundleId}" to activate`,
@@ -26,14 +33,26 @@ async function pasteClipboardIntoCodex() {
   await execFileAsync("/usr/bin/osascript", ["-e", buildCodexPasteScript()]);
 }
 
+export async function runCodexPasteSequence<TImage>(
+  input: { prompt: string; image: TImage },
+  dependencies: CodexPasteDependencies<TImage>
+) {
+  dependencies.writeImage(input.image);
+  await dependencies.paste();
+  await dependencies.wait(900);
+  dependencies.writeText(input.prompt);
+  await dependencies.paste();
+}
+
 export async function sendPromptToCodex(input: { prompt: string; image: NativeImage }): Promise<SendToCodexResult> {
   try {
     await execFileAsync("/usr/bin/open", ["-b", codexBundleId]);
-    clipboard.write({
-      image: input.image,
-      text: input.prompt
+    await runCodexPasteSequence(input, {
+      writeImage: (image) => clipboard.writeImage(image),
+      writeText: (text) => clipboard.writeText(text),
+      paste: pasteClipboardIntoCodex,
+      wait: (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds))
     });
-    await pasteClipboardIntoCodex();
 
     return {
       copied: true,
